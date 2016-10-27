@@ -27,11 +27,31 @@ function speechText(text) {
 
 function playTextAsVoice(textToSpeech, audioTag, voiceTag) {
 
-    voiceTag.src = watsonApiUrl + "&voice=" + selectedVoice + "&text=" + textToSpeech;
+    // let audioUrl = watsonApiUrl + "&voice=" + selectedVoice + "&text=" + textToSpeech;
+    // voiceTag.src = audioUrl; 
 
-    chrome.runtime.sendMessage(voiceTag.src);
-    audioTag.load();
-    audioTag.play();
+    // audioTag.load();
+    // audioTag.play();
+
+    let audioPostUrl = watsonApiUrl + "&voice=" + getVoice();
+
+    fetch(audioPostUrl, {
+        method: 'post',
+        body : JSON.stringify({
+            text : textToSpeech
+        }),
+        headers: new Headers({
+            'Content-Type' : 'application/json',
+            'Accept' : 'audio/ogg'
+        })
+	})
+    .then(response => response.blob())
+    .then(audioBytesArray => {
+        voiceTag.src = URL.createObjectURL(audioBytesArray);
+        audioTag.load();
+        audioTag.play();
+    })
+    .catch(console.error);
 }
 
 
@@ -106,4 +126,12 @@ function selectStorageOrSetStorageForFirstVoiceAndStore() {
     if (!selectedVoice) {
         selectedVoice = voices[0];
     }
+}
+
+function getVoice() {
+    return localStorage.getItem(SELECTED_VOICE) || voice[0];
+}
+
+function setVoice(voice) {
+    localStorage.setItem(SELECTED_VOICE, voice);
 }
