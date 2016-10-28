@@ -12,16 +12,20 @@ chrome.contextMenus.onClicked.addListener(onClickHandler);
 
 function onClickHandler(info, tab) {
     //page.alert(JSON.stringify(arguments));
-  
     //selectAndSaveVoice(info.menuItemId);
+
+    setupPageAndAudio();
     trySetVoiceOfVoicesAvailable(voices, info.menuItemId);
     speechText(info.selectionText);
 }
 
 function speechText(text) {
     
-    if (text)
+    if (text){
+        console.log(text);
+        console.log("Bytes: " + text.length);
         playTextAsVoice(text, audioTag, voiceTag);
+    }        
 }
 
 function playTextAsVoice(textToSpeech, audioTag, voiceTag) {
@@ -47,22 +51,39 @@ function playTextAsVoice(textToSpeech, audioTag, voiceTag) {
     .catch(console.error);
 }
 
+function setupPageAndAudio() {
+    if (!page) page = chrome.extension.getBackgroundPage();
+    if (!audioTag) audioTag = page.document.getElementById("audioTag");
+    if (!voiceTag) voiceTag = page.document.getElementById("voiceTag");
+}
+
+function trySetVoiceOfVoicesAvailable(voicesArray, voiceSelected) {
+    let voiceIndex = voicesArray.indexOf(voiceSelected);
+    let lastSelectedVoice = getVoice();
+    let selectedVoice = voiceIndex < 0 ? lastSelectedVoice : voicesArray[voiceIndex];
+    setVoice(selectedVoice);
+}
+
+function getVoice() {
+    return localStorage.getItem(SELECTED_VOICE) || voices[0];
+}
+
+function setVoice(voice) {
+    localStorage.setItem(SELECTED_VOICE, voice);
+}
+
+////////////////////////////////////////////////////
+///////     SETUP REGION ///////////////////////////
+////////////////////////////////////////////////////
 
 
 // Set up context menu tree at install time.
 chrome.runtime.onInstalled.addListener(function() {
-
-
-    // Only selection context
     //let contexts = ["selection", "page","link","editable","image","video","audio"];
 
     let sid = createSelectionContextMenu();
     let pid = createPageVoiceSelectionContextMenu();
     let voiceOptionsIds = createVoiceSelectionContextMenu();
-
-    requestSomeUntilAllArentNull([page, audioTag, voiceTag], _ => {
-        setupPageAndAudio();
-    });
 });
 
 
@@ -104,44 +125,4 @@ function createVoiceSelectionContextMenu() {
 
         chrome.contextMenus.create(voiceObjectOption);
     });
-}
-
-function setupPageAndAudio() {
-    if (!page) page = chrome.extension.getBackgroundPage();
-    if (!audioTag) audioTag = page.document.getElementById("audioTag");
-    if (!voiceTag) voiceTag = page.document.getElementById("voiceTag");
-}
-
-function trySetVoiceOfVoicesAvailable(voicesArray, voiceSelected) {
-    let voiceIndex = voicesArray.indexOf(voiceSelected);
-    let lastSelectedVoice = getVoice();
-    let selectedVoice = voiceIndex < 0 ? lastSelectedVoice : voicesArray[voiceIndex];
-    setVoice(selectedVoice);
-}
-
-function getVoice() {
-    return localStorage.getItem(SELECTED_VOICE) || voices[0];
-}
-
-function setVoice(voice) {
-    localStorage.setItem(SELECTED_VOICE, voice);
-}
-
-function requestSomeUntilAllArentNull(nullableArray, cb) {
-    let interval = setInterval((objectsArray) => {
-        let test = false;
-        for(let i = 0; i < nullableArray.length; i++) {
-            let nullableObject = nullableArray[i];
-            if (nullableObject === null) {
-                test = true;
-            }
-        }
-
-        if (test) cb();
-        else clearOMy(); 
-    }, 20, nullableArray);
-
-    function clearOMy() {
-        clearInterval(interval);    
-    }
 }
