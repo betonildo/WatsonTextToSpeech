@@ -73,7 +73,15 @@ function splitTextInto5KBArrayChunks(text) {
     for (let i = 0; i < words.length; i++) {
         word = words[i];
         tempText = currentChunk + word;
-        if (tempText.length > 100 && tempText.endsWith('.')) {
+        if (tempText.length > 100 &&
+
+            /** split into text ponctuations */ 
+            (
+                tempText.endsWith('.') || 
+                tempText.endsWith('!') ||
+                tempText.endsWith('?')
+            )
+        ) {
             chunks.push(tempText);            
             currentChunk = "";
         }
@@ -110,12 +118,13 @@ function playTextAsVoice(textToSpeech, audioTag, voiceTag) {
     .then(audioBlob => {
         enqueueBlob(audioBlob);
         let nextText = dequeueText();
-        if (nextText) {            
+        if (nextText) {
+
             playTextAsVoice(nextText, audioTag, voiceTag);
         }
     })
     .catch( error => {
-        clearPlayWatcherInterval();
+        //clearPlayWatcherInterval();
         console.error("Some error occured!");
         console.error(error);
         audioBlobArray = [];
@@ -137,7 +146,7 @@ function startAudioPlayWatcher(withBlobsLength) {
                 blobsCount++;
                 isPlaying = true;
                 audioTag.addEventListener("ended", function(){
-                    console.log("ended");
+                    console.log("");
                     console.log(audioBlobArray);
                     console.log(textsArray);
                     isPlaying = false;
@@ -145,6 +154,7 @@ function startAudioPlayWatcher(withBlobsLength) {
                 
             }
             else if (blobsCount === withBlobsLength){
+                console.log("Clearing Interval because it's end.");
                 clearPlayWatcherInterval();
             }
         }
@@ -176,11 +186,18 @@ function trySetVoiceOfVoicesAvailable(voicesArray, voiceSelected) {
 }
 
 function getVoice() {
-    return localStorage.getItem(SELECTED_VOICE) || voices[0];
+    let dbVoice = localStorage.getItem(SELECTED_VOICE);
+    console.log(dbVoice);
+    console.log(voices[0]);
+    return isNotAvailableString(dbVoice) ? voices[0] : dbVoice;
 }
 
 function setVoice(voice) {
     localStorage.setItem(SELECTED_VOICE, voice);
+}
+
+function isNotAvailableString(str) {
+    return str === "" || str === null || str === undefined || str === 'undefined' || str === 'null' || str.length === 0;
 }
 
 ////////////////////////////////////////////////////
