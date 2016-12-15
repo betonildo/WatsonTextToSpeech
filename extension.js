@@ -65,41 +65,71 @@ function speechText(text) {
 }
 
 function splitTextInto5KBArrayChunks(text) {
-    let words = text.split(' ');
+    const LINEFEED = '#LINEFEED';
+    const SPACE = ' ';
+    const DOT = '.';
+    const EXCLAMATIONPOINT = '!';
+    const INTERROGATIONPOINT = '?';
+
+    let treatedText = text.replace(/\s{2,}/g, LINEFEED);
     
     let chunks = [];
     let currentChunk = "";
     let tempText = "";
-    let word = "";
-    for (let i = 0; i < words.length; i++) {
-        word = words[i];
-        tempText = currentChunk + word;
-        if (tempText.length > 100 &&
 
-            /** split into text ponctuations */ 
-            (
-                tempText.endsWith('.') || 
-                tempText.endsWith('!') ||
-                tempText.endsWith('?')
-            )
-        ) {
-            chunks.push(tempText);            
+    let lines = treatedText.split(LINEFEED);
+    for(let i = 0; i < lines.length; i++) {
+        
+        let line = lines[i];
+        let words = line.split(SPACE);
+
+        for (let j = 0; j < words.length; j++) {
+            let word = words[j];
+            tempText = currentChunk + word;
+            if (tempText.length > 100 &&
+                /** split into text ponctuations */ 
+                (
+                    tempText.endsWith('.') || 
+                    tempText.endsWith('!') ||
+                    tempText.endsWith('?')
+                )
+            ) {  
+                chunks.push(tempText);                   
+                currentChunk = "";
+            }
+            else if (tempText.length > 500) {
+                chunks.push(tempText);      
+                currentChunk = "";
+            }
+            else {
+                currentChunk += word + ' ';
+            }
+        }
+        
+        if (currentChunk !== ""){
+            chunks.push(currentChunk);
             currentChunk = "";
-        }
-        else if (tempText.length > 500) {
-            chunks.push(tempText);            
-            currentChunk = "";
-        }
-        else {
-            currentChunk += word + ' ';
-        }
+        }            
     }
-
-    if (currentChunk !== "")
-        chunks.push(currentChunk);
 
     return chunks;
 }
+
+function fillChunkWithLinesAndPonctuations(tempText, chunks, LINEFEED) {
+    let lines = tempText.split(LINEFEED);
+    console.log(lines);
+    if (lines.length > 0) {
+        for(let ithLine = 0; ithLine < lines.length; ithLine++) {
+            let line = lines[ithLine];
+            //line = line.endsWith('.') || line.endsWith('!') || line.endsWith('?') ? line : line + ':';
+            chunks.push(line);
+        }
+    }
+    else {
+        chunks.push(tempText);
+    } 
+}
+
 
 function playTextAsVoice(textToSpeech, audioTag, voiceTag) {
     
@@ -162,7 +192,7 @@ function startAudioPlayWatcher(withBlobsLength) {
                 clearPlayWatcherInterval();
             }
         }
-    }, 500);
+    }, 10);
 }
 
 function clearPlayWatcherInterval() {
