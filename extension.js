@@ -6,6 +6,7 @@ let voiceTag = null;
 let watcherInterval = null;
 let audioBlobArray = [];
 let textsArray = [];
+let lastTextToVoice = null;
 const SELECTED_VOICE = "selectedVoice";
 const voices = ["en-US_LisaVoice", "pt-BR_IsabelaVoice", "en-US_MichaelVoice", "en-US_AllisonVoice"];
 const watsonApiUrl = "https://watson-api-explorer.mybluemix.net/text-to-speech/api/v1/synthesize?accept=audio%2Fogg%3Bcodecs%3Dopus";
@@ -119,7 +120,7 @@ function playTextAsVoice(textToSpeech, audioTag, voiceTag) {
         enqueueBlob(audioBlob);
         let nextText = dequeueText();
         if (nextText) {
-
+            lastTextToVoice = nextText;
             playTextAsVoice(nextText, audioTag, voiceTag);
         }
     })
@@ -127,8 +128,11 @@ function playTextAsVoice(textToSpeech, audioTag, voiceTag) {
         //clearPlayWatcherInterval();
         console.error("Some error occured!");
         console.error(error);
-        audioBlobArray = [];
-        textsArray = [];
+        if (lastTextToVoice) {
+            playTextAsVoice(lastTextToVoice, audioTag, voiceTag);
+        }
+        //audioBlobArray = [];
+        //textsArray = [];
     });
 }
 
